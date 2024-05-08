@@ -3,9 +3,14 @@ import serial
 import pandas as pd
 import time
 
-
 # シリアルポートの設定
-ser = serial.Serial("COM3", 115200)  # COMポートとボーレートを適切な値に変更
+try:
+    ser = serial.Serial("COM3", 115200)  # COMポートとボーレートを適切な値に変更
+    isSerial = True
+except serial.SerialException:
+    isSerial = False
+    print("デバイスが接続されていません")
+
 # CSVファイルのパス
 csv_path = "haptic_command.csv"
 # 動画ファイルのパス
@@ -100,7 +105,7 @@ while True:
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
     display_status(frame, current_time, playing)
-    # time.sleep(FPS)
+    time.sleep(FPS)
 
     # CSVファイルから再生時刻とシリアル通信のコマンドを取得
     for index, row in df.iterrows():
@@ -111,7 +116,8 @@ while True:
             # リストの値をコンマで繋げて文字列にする
             command = ",".join(map(str, map(int, values)))
             print(f"Sending command: {command}")
-            ser.write((command + "\n").encode())  # コマンドをシリアルポートに送信
+            if isSerial:
+                ser.write((command + "\n").encode())  # コマンドをシリアルポートに送信
 
     while not playing:
         key = cv2.waitKey(0) & 0xFF
