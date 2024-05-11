@@ -30,7 +30,6 @@ if not cap.isOpened():
 
 # 動画のFPS（フレームレート）を取得
 fps = int(cap.get(cv2.CAP_PROP_FPS))
-print(fps)
 # FPSは60のはずだが、何故か30になっているっぽい？
 FPS = 1 / (fps * 2)
 index = 0  # CSVファイルのインデックス
@@ -89,12 +88,13 @@ def display_status(frame, current_time, playing):
 # current_index = update_current_index()
 def update_current_index():
     current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
-    print(current_time)
+    # print("current time is:", current_time)
     min_diff = float('inf')  # 初期値は無限大
     closest_index = None
     for index, row in df.iterrows():
         time_stamp = row["current_time"]
         diff = abs(current_time - time_stamp)
+        # print("index =", index, "time_stamp = ", time_stamp,"diff =", diff, "min_diff =", min_diff)
         if diff < min_diff:
             min_diff = diff
             closest_index = index
@@ -137,11 +137,11 @@ def generate_time_amp_array(start_time, end_time, clap_interval_min, clap_interv
 # start_time = 35
 # end_time = 38.47
 # あらかじめ設定（都度変えてもよいか）
-clap_interval_min = 0.05  # sec
-clap_interval_max = 0.5 # sec
-clap_amp_min = 100
-clap_amp_max = 255
-randomness = 0.4
+clap_interval_min = 0.03  # sec
+clap_interval_max = 0.3 # sec
+clap_amp_min = 30
+clap_amp_max = 200
+randomness = 0.8
 
 # time_amp_array の index
 time_amp_array_index = 0
@@ -153,10 +153,28 @@ time_amp_array_index = 0
 #     print(f"Time: {time}, Amplitude: {amp}")
 
 
-# # 再生時刻を変化させるなら
-cap.set(cv2.CAP_PROP_POS_FRAMES, 1674)
+
+
+# リピートする時刻
+pingpong_end_time = 50.75 # 卓球の終わり
+basket_end_time = 76
+rikujo_end_time = 112.4 # 動画の終わり？
+
+repeat_time = rikujo_end_time
+
+# リピート後の初めのフレーム
+tennis_start_frame = 0
+pingpong_start_frame = 1674
+basket_start_frame = 3020
+rikujo_start_frame = 4536
+
+start_frame = tennis_start_frame
+
+# 再生時刻を変化させるなら
+cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame) # 卓球開始
 cap.read()
 current_index = update_current_index()
+print("current index is: ",current_index)
 
 # while False:
 while True:
@@ -167,7 +185,6 @@ while True:
 
     # 動画の現在時刻を取得
     current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
-    # print("Current Time:", current_time)
 
     # キー入力の待機
     key = cv2.waitKey(waitkeyMsec) & 0xFF
@@ -177,7 +194,7 @@ while True:
     # スペースキーを押すと再生/一時停止を切り替え
     elif key == ord(" "):
         # print(current_index)
-        # print(cap.get(cv2.CAP_PROP_POS_FRAMES))
+        print(cap.get(cv2.CAP_PROP_POS_FRAMES))
         playing = not playing
     elif key == ord("z"):  # 最初から再生
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -194,10 +211,11 @@ while True:
             if row['command'] == 1:
                 is_play_claps = True
                 start_time = current_time
-                # 次の playType == 4 の行のインデックスを探す
+                # 次の command == 2 の行のインデックスを探す
                 next_index = current_index + 1
-                while next_index < len(df) and df.iloc[next_index]['playType'] != 4:
+                while next_index < len(df) and df.iloc[next_index]['command'] != 2:
                     next_index += 1
+                print(next_index)
                 if next_index < len(df):
                     end_time = df.iloc[next_index]['current_time']
                     time_amp_array = generate_time_amp_array(start_time, end_time, clap_interval_min, clap_interval_max, clap_amp_min, clap_amp_max, randomness)
@@ -207,6 +225,7 @@ while True:
                     pass
             elif row['command'] == 2:
                 is_play_claps = False
+                time_amp_array_index = 0
             else:
                 # 2列目以降の値をリストに取得
                 values = row.values[2:]
@@ -224,7 +243,7 @@ while True:
         if isSerial:
             command = make_clap_command(time_amp_array[time_amp_array_index][1])
             ser.write((command + "\n").encode())  # コマンドをシリアルポートに送信
-            print(current_time, command)
+            print(f"command: {command}")
         time_amp_array_index += 1
 
     while not playing:
@@ -243,10 +262,13 @@ while True:
             display_status(frame, current_time, playing)
             current_index = update_current_index()
         elif key == ord("z"):  # 最初から再生
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+            current_index = update_current_index()
 
-    if current_time > 50.75:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+    # # ループの終わりの時間（必要ないならコメントアウト）
+    if current_time > repeat_time:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        cap.read()
         current_index = update_current_index()
 
     if not playing:
