@@ -5,10 +5,14 @@ import time
 import math
 import random
 
+show_status = False
+# show_status = True
+waitkeyMsec = 10 # キー入力の待ち時間、全体のディレイ調整
+
 
 # シリアルポートの設定
 try:
-    ser = serial.Serial("COM3", 115200)  # COMポートとボーレートを適切な値に変更
+    ser = serial.Serial("COM4", 115200)  # COMポートとボーレートを適切な値に変更
     isSerial = True
 except serial.SerialException:
     isSerial = False
@@ -33,10 +37,9 @@ fps = int(cap.get(cv2.CAP_PROP_FPS))
 # FPSは60のはずだが、何故か30になっているっぽい？
 FPS = 1 / (fps * 2)
 index = 0  # CSVファイルのインデックス
-waitkeyMsec = 1 # キー入力の待ち時間
 
 # ウィンドウ名と初期化
-cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
+cv2.namedWindow("Haptic sports demo", cv2.WINDOW_NORMAL)
 
 # 再生フラグと初期時間設定
 playing = True
@@ -45,44 +48,44 @@ current_frame = 0
 # csv の参照列
 current_index = 0
 
-def display_status(frame, current_time, playing):
+def display_status(frame, current_time, playing, show_text):
     """
     フレームに現在の再生時間と再生状態を表示する関数
     :param frame: 表示するフレーム
     :param current_time: 現在の再生時間
     :param playing: 再生中かどうかのフラグ
     """
-    cv2.putText(
-        frame,
-        f"Time: {current_time:.2f} s",
-        (10, 30),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1,
-        (0, 255, 0),
-        2,
-    )
-    if playing:
+    if show_text:
         cv2.putText(
             frame,
-            "Status: Playing",
-            (10, 60),
+            f"Time: {current_time:.2f} s",
+            (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
             2,
         )
-    else:
-        cv2.putText(
-            frame,
-            "Status: Paused",
-            (10, 60),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 0, 255),
-            2,
-        )
-
-    cv2.imshow("Video", frame)
+        if playing:
+            cv2.putText(
+                frame,
+                "Status: Playing",
+                (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2,
+            )
+        else:
+            cv2.putText(
+                frame,
+                "Status: Paused",
+                (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 255),
+                2,
+            )
+    cv2.imshow("Haptic sports demo", frame)
 
 # 動画再生時刻を変更する際に current_index をアップデートすること
 # current_index = update_current_index()
@@ -137,7 +140,7 @@ def generate_time_amp_array(start_time, end_time, clap_interval_min, clap_interv
 # start_time = 35
 # end_time = 38.47
 # あらかじめ設定（都度変えてもよいか）
-clap_interval_min = 0.03  # sec
+clap_interval_min = 0.08  # sec
 clap_interval_max = 0.3 # sec
 clap_amp_min = 30
 clap_amp_max = 200
@@ -153,12 +156,10 @@ time_amp_array_index = 0
 #     print(f"Time: {time}, Amplitude: {amp}")
 
 
-
-
 # リピートする時刻
 pingpong_end_time = 50.75 # 卓球の終わり
 basket_end_time = 76
-rikujo_end_time = 112.4 # 動画の終わり？
+rikujo_end_time = 111.4 # 動画の終わり？
 
 repeat_time = rikujo_end_time
 
@@ -200,7 +201,7 @@ while True:
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         current_index = update_current_index()
 
-    display_status(frame, current_time, playing)
+    display_status(frame, current_time, playing, show_status)
 
     # CSVファイルから再生時刻を取得し、一致した場合に実行
     if current_index < len(df):
@@ -259,7 +260,7 @@ while True:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, current_frame)
             ret, frame = cap.read()
             current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
-            display_status(frame, current_time, playing)
+            display_status(frame, current_time, playing, show_status)
             current_index = update_current_index()
         elif key == ord("z"):  # 最初から再生
             cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
