@@ -5,13 +5,24 @@ import time
 import math
 import random
 
-show_status = False
-# show_status = True
-waitkeyMsec = 10 # キー入力の待ち時間、全体のディレイ調整
+# リピートする時刻
+pingpong_end_time = 50.6  # 卓球の終わり
+basket_end_time = 76
+rikujo_end_time = 112  # 動画の終わり？
 
+repeat_time = rikujo_end_time
+
+# リピート後の初めのフレーム
+tennis_start_frame = 0
+pingpong_start_frame = 1674
+basket_start_frame = 3020
+rikujo_start_frame = 4536
+
+start_frame = tennis_start_frame
 
 # シリアルポートの設定
 try:
+    # ser = serial.Serial("COM3", 115200)  # COMポートとボーレートを適切な値に変更
     ser = serial.Serial("COM4", 115200)  # COMポートとボーレートを適切な値に変更
     isSerial = True
 except serial.SerialException:
@@ -37,6 +48,7 @@ fps = int(cap.get(cv2.CAP_PROP_FPS))
 # FPSは60のはずだが、何故か30になっているっぽい？
 FPS = 1 / (fps * 2)
 index = 0  # CSVファイルのインデックス
+waitkeyMsec = 1  # キー入力の待ち時間
 
 # ウィンドウ名と初期化
 cv2.namedWindow("Haptic sports demo", cv2.WINDOW_NORMAL)
@@ -48,7 +60,8 @@ current_frame = 0
 # csv の参照列
 current_index = 0
 
-def display_status(frame, current_time, playing, show_text):
+
+def display_status(frame, current_time, playing):
     """
     フレームに現在の再生時間と再生状態を表示する関数
     :param frame: 表示するフレーム
@@ -87,12 +100,13 @@ def display_status(frame, current_time, playing, show_text):
             )
     cv2.imshow("Haptic sports demo", frame)
 
+
 # 動画再生時刻を変更する際に current_index をアップデートすること
 # current_index = update_current_index()
 def update_current_index():
     current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
     # print("current time is:", current_time)
-    min_diff = float('inf')  # 初期値は無限大
+    min_diff = float("inf")  # 初期値は無限大
     closest_index = None
     for index, row in df.iterrows():
         time_stamp = row["current_time"]
@@ -103,31 +117,59 @@ def update_current_index():
             closest_index = index
     return closest_index
 
+
 clap_id = 10
+
+
 # 拍手をループで回す。再生間隔と再生
 def make_clap_command(amp):
     row = df.iloc[current_index]
     amplitude = amp
-    data_id = clap_id # Hapbeatに格納したデータに依存
-    category = row['category']
-    wearer_id = row['wearerID']
-    device_pos = row['devicePos']
+    data_id = clap_id  # Hapbeatに格納したデータに依存
+    category = row["category"]
+    wearer_id = row["wearerID"]
+    device_pos = row["devicePos"]
     sub_id = 0
     play_type = 0
-    command_values = [category, wearer_id, device_pos, data_id, sub_id, amplitude, amplitude, play_type]
+    command_values = [
+        category,
+        wearer_id,
+        device_pos,
+        data_id,
+        sub_id,
+        amplitude,
+        amplitude,
+        play_type,
+    ]
     command = ",".join(map(str, map(int, command_values)))
     return command
 
+
 is_play_claps = False
 
-def generate_time_amp_array(start_time, end_time, clap_interval_min, clap_interval_max, clap_amp_min, clap_amp_max, randomness=0.2):
+
+def generate_time_amp_array(
+    start_time,
+    end_time,
+    clap_interval_min,
+    clap_interval_max,
+    clap_amp_min,
+    clap_amp_max,
+    randomness=0.2,
+):
     def clap_func(time):
         t = (time - start_time) / (end_time - start_time)
         interval_range = clap_interval_max - clap_interval_min
         amp_range = clap_amp_max - clap_amp_min
-        interval = (clap_interval_min + interval_range * (1 - t)) * (1 - randomness + random.random() * randomness)
-        amp = int((clap_amp_min + amp_range * math.sin(t * math.pi / 2)) * (1 - randomness + random.random() * randomness))
+        interval = (clap_interval_min + interval_range * (1 - t)) * (
+            1 - randomness + random.random() * randomness
+        )
+        amp = int(
+            (clap_amp_min + amp_range * math.sin(t * math.pi / 2))
+            * (1 - randomness + random.random() * randomness)
+        )
         return interval, amp
+
     time_amp_array = []
     current_time = start_time
     while current_time <= end_time:
@@ -136,12 +178,13 @@ def generate_time_amp_array(start_time, end_time, clap_interval_min, clap_interv
         current_time += interval
     return time_amp_array
 
+
 # loop 呼び出すところで代入
 # start_time = 35
 # end_time = 38.47
 # あらかじめ設定（都度変えてもよいか）
-clap_interval_min = 0.08  # sec
-clap_interval_max = 0.3 # sec
+clap_interval_min = 0.07  # sec
+clap_interval_max = 0.7  # sec
 clap_amp_min = 30
 clap_amp_max = 200
 randomness = 0.8
@@ -156,26 +199,11 @@ time_amp_array_index = 0
 #     print(f"Time: {time}, Amplitude: {amp}")
 
 
-# リピートする時刻
-pingpong_end_time = 50.75 # 卓球の終わり
-basket_end_time = 76
-rikujo_end_time = 111.4 # 動画の終わり？
-
-repeat_time = rikujo_end_time
-
-# リピート後の初めのフレーム
-tennis_start_frame = 0
-pingpong_start_frame = 1674
-basket_start_frame = 3020
-rikujo_start_frame = 4536
-
-start_frame = tennis_start_frame
-
 # 再生時刻を変化させるなら
-cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame) # 卓球開始
+cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)  # 卓球開始
 cap.read()
 current_index = update_current_index()
-print("current index is: ",current_index)
+print("current index is: ", current_index)
 
 # while False:
 while True:
@@ -206,25 +234,33 @@ while True:
     # CSVファイルから再生時刻を取得し、一致した場合に実行
     if current_index < len(df):
         row = df.iloc[current_index]
-        time_stamp = row['current_time']
+        time_stamp = row["current_time"]
         if abs(current_time - time_stamp) < 0.01:
             # ループ開始の時（ざわめきの時に鳴らす前提で書いているが、できればCSV側で全部指示できるようになるとよい）
-            if row['command'] == 1:
+            if row["command"] == 1:
                 is_play_claps = True
                 start_time = current_time
                 # 次の command == 2 の行のインデックスを探す
                 next_index = current_index + 1
-                while next_index < len(df) and df.iloc[next_index]['command'] != 2:
+                while next_index < len(df) and df.iloc[next_index]["command"] != 2:
                     next_index += 1
-                print(next_index)
+                # print(next_index)
                 if next_index < len(df):
-                    end_time = df.iloc[next_index]['current_time']
-                    time_amp_array = generate_time_amp_array(start_time, end_time, clap_interval_min, clap_interval_max, clap_amp_min, clap_amp_max, randomness)
+                    end_time = df.iloc[next_index]["current_time"]
+                    time_amp_array = generate_time_amp_array(
+                        start_time,
+                        end_time,
+                        clap_interval_min,
+                        clap_interval_max,
+                        clap_amp_min,
+                        clap_amp_max,
+                        randomness,
+                    )
                     time_amp_array_index = 0
                 else:
                     # 次の playType == 4 の行が見つからなかった場合の処理
                     pass
-            elif row['command'] == 2:
+            elif row["command"] == 2:
                 is_play_claps = False
                 time_amp_array_index = 0
             else:
@@ -233,14 +269,18 @@ while True:
                 # リストの値をコンマで繋げて文字列にする
                 command = ",".join(map(str, map(int, values)))
                 if isSerial:
-                    ser.write((command + "\n").encode())  # コマンドをシリアルポートに送信
+                    ser.write(
+                        (command + "\n").encode()
+                    )  # コマンドをシリアルポートに送信
                 print(f"command: {command}")
             current_index += 1  # 次の行に移動
-    
-    
-    if (is_play_claps and
-        time_amp_array_index < len(time_amp_array) and 
-        abs(current_time - time_amp_array[time_amp_array_index][0]) < clap_interval_min):
+
+    if (
+        is_play_claps
+        and time_amp_array_index < len(time_amp_array)
+        and abs(current_time - time_amp_array[time_amp_array_index][0])
+        < clap_interval_min
+    ):
         if isSerial:
             command = make_clap_command(time_amp_array[time_amp_array_index][1])
             ser.write((command + "\n").encode())  # コマンドをシリアルポートに送信
