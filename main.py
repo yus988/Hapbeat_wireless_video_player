@@ -12,6 +12,9 @@ rikujo_end_time = 112  # 動画の終わり？
 
 repeat_time = rikujo_end_time
 
+show_text = False
+show_status = False
+
 # リピート後の初めのフレーム
 tennis_start_frame = 0
 pingpong_start_frame = 1674
@@ -61,14 +64,14 @@ current_frame = 0
 current_index = 0
 
 
-def display_status(frame, current_time, playing):
+def display_status(frame, current_time, playing, show_status):
     """
     フレームに現在の再生時間と再生状態を表示する関数
     :param frame: 表示するフレーム
     :param current_time: 現在の再生時間
     :param playing: 再生中かどうかのフラグ
     """
-    if show_text:
+    if show_status:
         cv2.putText(
             frame,
             f"Time: {current_time:.2f} s",
