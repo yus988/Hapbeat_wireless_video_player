@@ -10,6 +10,9 @@ pingpong_end_time = 50.6  # 卓球の終わり
 basket_end_time = 76
 rikujo_end_time = 112  # 動画の終わり？
 
+
+waitkeyMsec = 7 # キー入力の待ち時間
+
 repeat_time = rikujo_end_time
 
 show_text = False
@@ -26,7 +29,8 @@ start_frame = tennis_start_frame
 # シリアルポートの設定
 try:
     # ser = serial.Serial("COM3", 115200)  # COMポートとボーレートを適切な値に変更
-    ser = serial.Serial("COM4", 115200)  # COMポートとボーレートを適切な値に変更
+    ser = serial.Serial("COM9", 115200)  # COMポートとボーレートを適切な値に変更
+    # ser = serial.Serial("COM4", 115200)  # COMポートとボーレートを適切な値に変更
     isSerial = True
 except serial.SerialException:
     isSerial = False
@@ -51,7 +55,6 @@ fps = int(cap.get(cv2.CAP_PROP_FPS))
 # FPSは60のはずだが、何故か30になっているっぽい？
 FPS = 1 / (fps * 2)
 index = 0  # CSVファイルのインデックス
-waitkeyMsec = 1  # キー入力の待ち時間
 
 # ウィンドウ名と初期化
 cv2.namedWindow("Haptic sports demo", cv2.WINDOW_NORMAL)
