@@ -26,11 +26,13 @@ rikujo_start_frame = 4536
 
 start_frame = tennis_start_frame
 
+# port = "COM11"
+port = "COM16"
+# port = "COM11"
+
 # シリアルポートの設定
 try:
-    # ser = serial.Serial("COM3", 115200)  # COMポートとボーレートを適切な値に変更
-    ser = serial.Serial("COM9", 115200)  # COMポートとボーレートを適切な値に変更
-    # ser = serial.Serial("COM4", 115200)  # COMポートとボーレートを適切な値に変更
+    ser = serial.Serial(port, 115200)  # COMポートとボーレートを適切な値に変更
     isSerial = True
 except serial.SerialException:
     isSerial = False
