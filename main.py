@@ -13,22 +13,28 @@ rikujo_end_time = 112  # 動画の終わり？
 
 waitkeyMsec = 7 # キー入力の待ち時間
 
-repeat_time = rikujo_end_time
-
-show_text = False
-show_status = False
-
 # リピート後の初めのフレーム
 tennis_start_frame = 0
 pingpong_start_frame = 1674
 basket_start_frame = 3020
 rikujo_start_frame = 4536
 
+# 本番用
 start_frame = tennis_start_frame
+repeat_time = rikujo_end_time
+show_text = False
+show_status = False
 
+# dev
+# show_text = True
+# show_status = True
+# repeat_time = basket_end_time
+# start_frame = basket_start_frame
+
+# port = "COM3" # Desktop GRAY
+# port = "COM16"
 # port = "COM11"
-port = "COM16"
-# port = "COM11"
+port = "COM5" # Desktop GRAY
 
 # シリアルポートの設定
 try:
