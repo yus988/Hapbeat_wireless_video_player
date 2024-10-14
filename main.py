@@ -244,6 +244,9 @@ while True:
     if not ret:
         break
 
+    # frame = cv2.resize(frame, (1920, 1080))  # 必要に応じて解像度を調整
+    # resized_frame = cv2.resize(frame, (640, 360))  # 例えば 640x360 にリサイズ
+    
     # 動画の現在時刻を取得
     current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
 
