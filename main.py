@@ -4,6 +4,7 @@ import pandas as pd
 import time
 import math
 import random
+import ctypes  # Windowsでカーソルを非表示にするために使用
 
 # リピートする時刻
 pingpong_end_time = 50.6  # 卓球の終わり
@@ -11,7 +12,7 @@ basket_end_time = 76
 rikujo_end_time = 112  # 動画の終わり？
 
 
-waitkeyMsec = 7 # キー入力の待ち時間
+waitkeyMsec = 7  # キー入力の待ち時間
 
 # リピート後の初めのフレーム
 tennis_start_frame = 0
@@ -34,7 +35,18 @@ show_status = False
 # port = "COM3" # Desktop GRAY
 # port = "COM16"
 # port = "COM11"
-port = "COM5" # Desktop GRAY
+port = "COM5"  # Desktop GRAY
+
+
+# マウスカーソルを隠す関数
+def hide_cursor():
+    ctypes.windll.user32.ShowCursor(False)
+
+
+# マウスカーソルを表示する関数
+def show_cursor():
+    ctypes.windll.user32.ShowCursor(True)
+
 
 # シリアルポートの設定
 try:
@@ -66,6 +78,12 @@ index = 0  # CSVファイルのインデックス
 
 # ウィンドウ名と初期化
 cv2.namedWindow("Haptic sports demo", cv2.WINDOW_NORMAL)
+
+# 現在のモードを管理するフラグ
+is_fullscreen = False
+
+# # 最大化した際に全画面にする設定
+# cv2.setWindowProperty("Haptic sports demo", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 # 再生フラグと初期時間設定
 playing = True
@@ -242,6 +260,20 @@ while True:
     elif key == ord("z"):  # 最初から再生
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         current_index = update_current_index()
+        # ESCキーを押すと全画面とウィンドウモードを切り替え
+    elif key == 27:  # 27はESCキーのキーコード
+        is_fullscreen = not is_fullscreen  # フルスクリーン状態をトグル
+        if is_fullscreen:
+            cv2.setWindowProperty(
+                "Haptic sports demo", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN
+            )
+            hide_cursor()  # カーソルを非表示
+
+        else:
+            cv2.setWindowProperty(
+                "Haptic sports demo", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL
+            )
+            show_cursor()  # カーソルを表示
 
     display_status(frame, current_time, playing, show_status)
 

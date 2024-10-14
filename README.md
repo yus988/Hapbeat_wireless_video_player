@@ -18,3 +18,7 @@ AttributeError: module 'serial' has no attribute 'Serial'
 - pip uninstall serial
 - pip install pyserial 
 を実行する（もともとのserialライブラリが衝突している模様）
+
+### ライブラリの書き出し
+- `pip freeze > install.txt`
+- 
