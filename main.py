@@ -8,7 +8,7 @@ import ctypes  # Windowsでカーソルを非表示にするために使用
 
 # リピートする時刻
 pingpong_end_time = 50.6  # 卓球の終わり
-basket_end_time = 76
+basket_end_time = 75.2
 rikujo_end_time = 112  # 動画の終わり？
 
 
@@ -23,6 +23,7 @@ rikujo_start_frame = 4536
 # 本番用
 start_frame = tennis_start_frame
 repeat_time = rikujo_end_time
+# repeat_time = basket_end_time
 show_text = False
 show_status = False
 
@@ -30,12 +31,12 @@ show_status = False
 # show_text = True
 # show_status = True
 # repeat_time = basket_end_time
-# start_frame = basket_start_frame
+start_frame = 0
 
-# port = "COM3" # Desktop GRAY
+port = "COM3" # Desktop GRAY
 # port = "COM16"
 # port = "COM11"
-port = "COM5"  # Desktop GRAY
+# port = "COM5"  # Desktop GRAY
 
 
 # マウスカーソルを隠す関数
